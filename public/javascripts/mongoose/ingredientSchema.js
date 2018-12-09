@@ -1,7 +1,7 @@
-let mongoose = require('mongoose')
+let mongoose = require('mongoose');
 
 let IngredientSchema  = new mongoose.Schema({
-    scanNumber: Number,
+    barCode: String,
     name: String,
     typeDish: String,
     typeMeal: String,
