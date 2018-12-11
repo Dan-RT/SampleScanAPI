@@ -15,7 +15,6 @@ router.get('/test', function(req, res, next) {
     res.send('yup');
 });
 
-
 //GET ingredients par keyword
 router.get('/search/keywords/:keywords', function(req, res) {
     console.log("\nGET request: ");
@@ -37,13 +36,12 @@ router.get('/search/barCode/:barCode', function(req, res) {
     IngredientModel.find({
         barCode: code
     }).then(doc => {
-        res.send(doc);
+        res.send(doc[0]);
     }).catch(err => {
         console.error(err);
     });
 });
 
-//ADD changer pour dynamique add
 router.post('/add', function(req, res) {
 
     /*let ingredientToAdd = new IngredientModel({
@@ -57,13 +55,13 @@ router.post('/add', function(req, res) {
     });*/
 
     let ingredientToAdd = new IngredientModel({
-        barCode: listIngredients[2].barCode,
-        name: listIngredients[2].name,
-        typeDish: listIngredients[2].typeDish,
-        typeMeal: listIngredients[2].typeMeal,
-        weight: listIngredients[2].weight,
-        quantity: listIngredients[2].quantity,
-        keywords: listIngredients[2].keywords
+        barCode: req.body.barCode,
+        name: req.body.name,
+        typeDish: req.body.typeDish,
+        typeMeal: req.body.typeMeal,
+        weight: req.body.weight,
+        quantity: req.body.quantity,
+        keywords: req.body.keywords
     });
 
     ingredientToAdd.save()
