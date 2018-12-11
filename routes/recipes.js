@@ -13,6 +13,7 @@ listRecipes.push(new recipe("Pâtes Bolo",
                                     "test description"
     )
 );
+
 /*
 listRecipes.push(new recipe("Pâtes Pesto",
     [
@@ -28,7 +29,7 @@ listRecipes.push(new recipe("Soupe de tomate",
     )
 );*/
 
-function asyncLoop(res, i, ingredientArray, keywordsIngredients, callback) {
+function asyncLoopKeywordsRecipes(res, i, ingredientArray, keywordsIngredients, callback) {
     if(i < ingredientArray.length) {
         console.log(i);
 
@@ -51,11 +52,10 @@ function asyncLoop(res, i, ingredientArray, keywordsIngredients, callback) {
                 console.log("\nKeyword total:");
                 console.log(keywordsIngredients);
 
-                asyncLoop(res, i+1, ingredientArray, keywordsIngredients, callback);
+                asyncLoopKeywordsRecipes(res, i+1, ingredientArray, keywordsIngredients, callback);
             } else {
-                res.send("error:\"ingredient not found\"");
+                asyncLoopKeywordsRecipes(res, i+1, ingredientArray, keywordsIngredients, callback);
             }
-
         }).catch(err => {
             console.error(err);
             res.send("error:\"true\"");
@@ -66,23 +66,98 @@ function asyncLoop(res, i, ingredientArray, keywordsIngredients, callback) {
     }
 }
 
-//ALL GOOD, TESTED AND APPROVED
+function asyncLoop(res, i, ingredientBarCodes, ingredientArray, callback) {
+    console.log("ingredients:");
+    console.log(ingredientBarCodes);
+    console.log("fin ingrédients");
+
+    try {
+        if(i < ingredientBarCodes.length) {
+            console.log(i);
+            console.log(ingredientBarCodes[i]);
+
+            IngredientModel.find({
+                barCode: String(ingredientBarCodes[i])
+            }).then(doc => {
+                console.log(doc);
+                if (doc.length > 0) {
+                    console.log("\nINGREDIENT FOUND");
+                    ingredientArray.push(doc[0].toObject());
+                } else {
+                    console.log("\nINGREDIENT NOT FOUND");
+                }
+                asyncLoop(res, i+1, ingredientBarCodes, ingredientArray, callback);
+            }).catch(err => {
+                console.error(err);
+                asyncLoop(res, i+1, ingredientBarCodes, ingredientArray, callback);
+            });
+
+        } else {
+            callback(ingredientArray);
+        }
+    } catch (e) {
+        console.log(e);
+        callback(null);
+    }
+}
+
+function asyncLoopRecipes(res, i, recipesArray, callback) {
+
+    try {
+        if(i < recipesArray.length) {
+            var recipetmp = recipesArray[i];
+            console.log(recipetmp);
+            var ingredientArray =[];
+            asyncLoop(res, 0, recipetmp.ingredientsBarCode, ingredientArray, function () {
+                recipetmp.ingredientsDetailed = ingredientArray;
+                asyncLoopRecipes(res, i+1, recipesArray, callback);
+            });
+        } else {
+            callback(recipesArray);
+        }
+    } catch (e) {
+        console.log(e);
+        callback(null);
+    }
+}
+
+function loopRecipes (res, doc) {
+    for (let i = 0; i < doc.length; i++) {
+        var ingredientArray = [];
+        asyncLoop(res, i, doc[i].ingredientsBarCode, ingredientArray, function (ingredientArray) {
+            console.log("ingredientsDetailed");
+            doc[i].ingredientsDetailed = ingredientArray;
+            console.log(doc[i].ingredientsDetailed);
+        });
+        console.log("loop: " + i);
+    }
+
+    console.log("fin loop");
+    res.send(doc);
+}
 
 //GET by keywords
-router.get('/search/keywords/:keywords/', function (req, res) {
+router.get('/search/keywords/:keywords', function (req, res) {
 
     var keywords = req.params.keywords;
 
     RecipeModel.find({
         keywords: keywords
     }).then(doc => {
-        console.log("\nRECIPE FOUND");
+        console.log("\nRECIPES FOUND");
         console.log(doc);
-        console.log("\n");
-        res.send(doc);
+
+        if (doc.length > 0) {
+            asyncLoopRecipes(res, 0, doc, function (doc) {
+                res.send(doc);
+            })
+        } else {
+            res.send(doc)
+        }
+
     }).catch(err => {
         console.error(err);
-        res.send("{}");
+        res.send("{error:\"RECIPE NOT FOUND\"}");
     });
 
 });
@@ -128,16 +203,17 @@ router.post('/add/', function(req, res) {
     //console.log(result);
 
     var keywordsIngredients = [];
+    var barCodes = ["111114", "111113", "111112", "111111"]; //req.body.ingredientsBarCode;
 
-    asyncLoop(res, 0, listRecipes[0].ingredientsBarCode, keywordsIngredients, function(keywordsIngredients) {
+    asyncLoopKeywordsRecipes(res, 0, barCodes, keywordsIngredients, function(keywordsIngredients) {
         console.log("\nKeywords of the new Recipe:");
         console.log(keywordsIngredients);
 
         let recipeToAdd = new RecipeModel({
-            name: listRecipes[0].name,
-            ingredientsBarCode: listRecipes[0].ingredientsBarCode,
+            name: req.body.name,
+            ingredientsBarCode: barCodes,
             keywords: keywordsIngredients,
-            description: listRecipes[0].description
+            description: req.body.description
         });
 
         recipeToAdd.save()
