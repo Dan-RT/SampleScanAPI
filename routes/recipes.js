@@ -203,7 +203,7 @@ router.post('/add/', function(req, res) {
     //console.log(result);
 
     var keywordsIngredients = [];
-    var barCodes = ["111114", "111113", "111112", "111111"]; //req.body.ingredientsBarCode;
+    var barCodes =  req.body.ingredientsBarCode;    //["111114", "111113", "111112", "111111"];
 
     asyncLoopKeywordsRecipes(res, 0, barCodes, keywordsIngredients, function(keywordsIngredients) {
         console.log("\nKeywords of the new Recipe:");
