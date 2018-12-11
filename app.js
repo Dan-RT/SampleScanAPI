@@ -15,7 +15,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
-var port = process.env.PORT || 8080;
+var port = process.env.PORT || 8001;
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -47,6 +47,6 @@ app.use(function(err, req, res, next) {
 var server = require('http').createServer(app);
 server.listen(port);
 
-console.log("Magic happens on port 3000");
+console.log("Magic happens on port " + port);
 
 module.exports = app;
